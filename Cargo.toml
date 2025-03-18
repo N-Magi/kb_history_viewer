@@ -11,3 +11,4 @@ chrono = "*"
 tokio = {version =  "1.43.0", features = ["full"]}
 tokio-stream = {version = "*"}
 uuid ={ version = "*" , features = ["v4","fast-rng","macro-diagnostics"]}
+similar = "2.7.0"
