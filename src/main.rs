@@ -3,6 +3,7 @@ use std::string;
 use iced::{advanced::{graphics::{core::widget, futures::backend::default}, widget::text}, alignment::{Horizontal, Vertical}, futures::{future::Select, io::Window, task}, widget::{canvas::path::lyon_path::geom::euclid::Length, center, column, combo_box::{self, State}, row, shader::wgpu::hal::InstanceDescriptor, text_editor::{self, Action, Content}, Container, Row}, window, Element, Font, Padding, Pixels, Settings, Size, Task};
 use kb_dbcontext::KbDbContext;
 use similar::{self, ChangeTag};
+use tokio_stream::Elapsed;
 mod kb_dbcontext;
 mod diff_tool_error;
 
@@ -48,6 +49,8 @@ enum MainWindowMessage {
 
     DiffTextInput(Action),
     DiffCalculationFinished(String),
+
+    ErrorOccured(String),
 }
 
 pub async fn diff_calculation(old:String,new:String) -> String {
@@ -109,8 +112,17 @@ impl MainWindow {
 
             MainWindowMessage::OnSerachButtonPress => {
 
-                let kb_num = self.kb_serchbox_content.text().replace("\n", "").parse::<i64>().unwrap();
-                self.kb_entities = self.db_conn.get_history(kb_num).unwrap();
+                let kb_mum = self.kb_serchbox_content.text().replace("\n", "");
+
+                let Ok(kb_num) = kb_mum.parse::<i64>() else {
+                    return  Task::done(MainWindowMessage::ErrorOccured("kb_num ParseError".to_string()));
+                };
+
+                let Ok(kb_entities) = self.db_conn.get_history(kb_num) else {
+                    return  Task::done(MainWindowMessage::ErrorOccured("get_kbhistory".to_string()));
+                };
+            
+                self.kb_entities = kb_entities;
                 
                 let history_dates:Vec<String> = self.kb_entities.iter().map(|entity| entity.last_modified_date.to_rfc3339()).collect();
 
@@ -132,8 +144,6 @@ impl MainWindow {
 
                 return Task::done(MainWindowMessage::SelectChanged);
             }
-
-
 
             MainWindowMessage::View2ComboBoxSelected(selected) => {
                 
