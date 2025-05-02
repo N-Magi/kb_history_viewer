@@ -1,9 +1,29 @@
 use std::string;
 
-use iced::{advanced::{graphics::{core::widget, futures::backend::default}, widget::text}, alignment::{Horizontal, Vertical}, futures::{future::Select, io::Window, task}, widget::{canvas::path::lyon_path::geom::euclid::Length, center, column, combo_box::{self, State}, row, shader::wgpu::hal::InstanceDescriptor, text_editor::{self, Action, Content}, Container, Row}, window, Element, Font, Padding, Pixels, Settings, Size, Task};
+use iced::{advanced::{
+    graphics::{core::widget, futures::backend::default}, widget::text}, 
+    alignment::{Horizontal, Vertical}, 
+    futures::{future::Select, 
+        io::{Take, Window}, task}, 
+        widget::{
+            
+            center, 
+            column, 
+            combo_box::{self, State}, 
+            row, 
+            shader::wgpu::{hal::InstanceDescriptor, naga::proc::Alignment}, 
+            text_editor::{self, Action, Content}, Container, Row}, 
+            
+            Alignment::{Center}, 
+            Element, 
+            
+            Settings, 
+            Size, 
+            Task
+        };
 use kb_dbcontext::KbDbContext;
 use similar::{self, ChangeTag};
-use tokio_stream::Elapsed;
+
 mod kb_dbcontext;
 mod diff_tool_error;
 
@@ -110,6 +130,19 @@ impl MainWindow {
                 return  Task::none();
             }
 
+            MainWindowMessage::View1TextInput(action) => {
+
+                self.view1_content.perform(action);
+                return  Task::none();
+            }
+
+            MainWindowMessage::View2TextInput(action) => {
+               
+                self.view2_content.perform(action);
+                return  Task::none();
+            }
+
+
             MainWindowMessage::OnSerachButtonPress => {
 
                 let kb_mum = self.kb_serchbox_content.text().replace("\n", "");
@@ -176,6 +209,12 @@ impl MainWindow {
                 return  Task::none();
             }
 
+            MainWindowMessage::DiffTextInput(action ) => {
+                self.diff_content.perform(action);
+                return  Task::none();
+            }
+
+
             default => {
                 return Task::none();
             }
@@ -185,16 +224,19 @@ impl MainWindow {
 
     fn view(&self) -> Element<MainWindowMessage>{
 
-        
-
         let btn_search = iced::widget::button(iced::widget::text("search")).on_press(MainWindowMessage::OnSerachButtonPress);
         let kb_serch_textbox = iced::widget::text_editor(&self.kb_serchbox_content).on_action(MainWindowMessage::OnKbSerchBoxInput);
+        
+        let qty_options = self.view1_state.options().iter().count();
+        let item_count_label = iced::widget::text(format!("{} iems hit",qty_options));
 
-        let mut row1 = iced::widget::row![
+        let row1 = iced::widget::row![
             kb_serch_textbox.width(200),
-            btn_search.padding(5)
+            btn_search.padding(5),
+            item_count_label.align_y(Center),
             ];
-
+/// ################### End of Row 1 ##############
+/// 
         let view1_combo_box = iced::widget::combo_box(&self.view1_state, "Version", self.view1_combo_select.as_ref().map(|value| value), MainWindowMessage::View1ComboBoxSelected);
         let view2_combo_box = iced::widget::combo_box(&self.view2_state, "Version", self.view2_combo_select.as_ref().map(|value| value), MainWindowMessage::View2ComboBoxSelected);
 
@@ -202,7 +244,8 @@ impl MainWindow {
             view1_combo_box.padding(10),
             view2_combo_box.padding(10)
             ];
-
+/// ################### End of Row 2 ##############
+/// 
         let view1 = iced::widget::text_editor(&self.view1_content).on_action(MainWindowMessage::View1TextInput);
         let view2 = iced::widget::text_editor(&self.view2_content).on_action(MainWindowMessage::View2TextInput);
         
@@ -210,17 +253,17 @@ impl MainWindow {
             view1.height(iced::Length::Fill),
             view2.height(iced::Length::Fill),
         ];
-
-        row1 = row1.align_y(Vertical::Top);
-        
+/// ################### End of Row 3 ##############
+/// 
         let diff_view = iced::widget::text_editor(&self.diff_content).on_action(MainWindowMessage::DiffTextInput);
 
-        let mut row4 = iced::widget::row![
+        let row4 = iced::widget::row![
             diff_view.height(iced::Length::Fill),
         ];
-
-        let mut col1 = column![
-            row1,
+/// ################### End of Row 4 ##############
+/// 
+        let col1 = column![
+            row1.height(30).align_y(Vertical::Center),
             row2,
             row3,
             row4,
